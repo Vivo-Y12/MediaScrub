@@ -40,3 +40,21 @@ describe("real operation builders", () => {
     expect(section?.entries.find(e => e.key === "Duration")?.value).toBe("2.50 s");
   });
 });
+
+describe("content-based provenance format detection", () => {
+  it("does not let a renamed signed image or video masquerade as WebM", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const { sniffProvenanceFormat } = await import("@/lib/provenance/format");
+    const jpeg = new File([new Uint8Array(await readFile(new URL("../e2e/fixtures/c2pa-sample.jpg", import.meta.url)))], "signed.webm", { type: "video/webm" });
+    const mp4 = new File([new Uint8Array(await readFile(new URL("../e2e/fixtures/c2pa-video.mp4", import.meta.url)))], "signed.webm", { type: "video/webm" });
+    expect(await sniffProvenanceFormat(jpeg)).toBe("image/jpeg");
+    expect(await sniffProvenanceFormat(mp4)).toBe("video/mp4");
+  });
+  it("permits the WebM exception only with an actual WebM DocType", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const { sniffProvenanceFormat } = await import("@/lib/provenance/format");
+    const raw = new Uint8Array(await readFile(new URL("../e2e/fixtures/sample.webm", import.meta.url)));
+    expect(await sniffProvenanceFormat(new File([raw], "clip.mp4", { type: "video/mp4" }))).toBe("video/webm");
+    expect(await sniffProvenanceFormat(new File([raw.subarray(0, 4)], "clip.webm", { type: "video/webm" }))).toBeNull();
+  });
+});

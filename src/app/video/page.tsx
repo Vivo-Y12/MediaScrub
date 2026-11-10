@@ -100,12 +100,16 @@ export default function VideoWorkspace() {
   const [running, setRunning] = useState(false);
   const [engineError, setEngineError] = useState<string | null>(null);
   const cancelRef = useRef(false);
+  const runRef = useRef(0);
   const entriesRef = useRef<Entry[]>([]);
   useEffect(() => { entriesRef.current = entries; }, [entries]);
 
   useEffect(() => {
     getCapabilities().then(setCaps);
     return () => {
+      cancelRef.current = true;
+      runRef.current += 1;
+      terminateFFmpeg();
       entriesRef.current.forEach(e => {
         URL.revokeObjectURL(e.srcUrl);
         e.result?.thumbs.forEach(t => URL.revokeObjectURL(t.url));
@@ -145,6 +149,10 @@ export default function VideoWorkspace() {
   }, []);
 
   const clearAll = useCallback(() => {
+    cancelRef.current = true;
+    runRef.current += 1;
+    terminateFFmpeg();
+    setEngine("cold");
     setEntries((prev) => {
       prev.forEach((e) => {
         URL.revokeObjectURL(e.srcUrl);
@@ -157,6 +165,7 @@ export default function VideoWorkspace() {
 
   const cancel = () => {
     cancelRef.current = true;
+    runRef.current += 1;
     terminateFFmpeg(); // hard-kill the WASM thread
     setEngine("cold");
     setRunning(false);
@@ -170,12 +179,14 @@ export default function VideoWorkspace() {
     const todo = entries.filter((e) => e.status === "queued" || e.status === "error");
     if (!todo.length) return;
     cancelRef.current = false;
+    const runId = ++runRef.current;
+    const current = () => !cancelRef.current && runRef.current === runId;
     setRunning(true);
     setEngineError(null);
     let completed = 0;
 
     for (const entry of todo) {
-      if (cancelRef.current) break;
+      if (!current()) break;
       if (entry.file.size > HARD_LIMIT_MB * 1024 * 1024) {
         updateEntry(entry.id, { status: "error", error: `Over the ${HARD_LIMIT_MB} MB safety ceiling for in-browser WASM.` });
         continue;
@@ -190,13 +201,13 @@ export default function VideoWorkspace() {
       let outName = "";
       try {
         await assertNoSignedProvenance(entry.file);
-        if (cancelRef.current) break;
+        if (!current()) break;
         setEngine("loading");
         ff = await getFFmpeg(
-          (p) => updateEntry(entry.id, { progress: Math.min(0.98, 0.05 + p.ratio * 0.93) }),
+          (p) => { if (current()) updateEntry(entry.id, { progress: Math.min(0.98, 0.05 + p.ratio * 0.93) }); },
           settings.operation === "trim" ? settings.trimEnd - settings.trimStart : entry.probe.duration ?? undefined
         );
-        if (cancelRef.current) break;
+        if (!current()) break;
         setEngine("warm");
         inName = `in-${entry.id}.${inputExtOf(entry.file.name)}`;
         const outExt = outputExtension(settings);
@@ -204,7 +215,7 @@ export default function VideoWorkspace() {
 
         await ff.writeFile(inName, new Uint8Array(await entry.file.arrayBuffer()));
 
-        if (cancelRef.current) break;
+        if (!current()) break;
         if (settings.operation === "thumbnails") {
           const pattern = `t-${entry.id}-%02d.jpg`;
           const args = buildThumbnailArgs(inName, pattern, entry.probe.duration ?? 0, settings.thumbCount);
@@ -226,7 +237,7 @@ export default function VideoWorkspace() {
           const zip = new JSZip();
           thumbs.forEach((t, i) => zip.file(`frame-${String(i + 1).padStart(2, "0")}.jpg`, t.blob));
           const bundle = await zip.generateAsync({ type: "blob" });
-          if (cancelRef.current) { thumbs.forEach(t => URL.revokeObjectURL(t.url)); break; }
+          if (!current()) { thumbs.forEach(t => URL.revokeObjectURL(t.url)); break; }
           updateEntry(entry.id, {
             status: "done",
             progress: 1,
@@ -261,7 +272,7 @@ export default function VideoWorkspace() {
                       : "audio/mpeg";
           const blob = new Blob([new Uint8Array(bytes)], { type: mime });
           if (blob.size === 0) throw new Error("Output came back empty — conversion is not possible for this file.");
-          if (cancelRef.current) break;
+          if (!current()) break;
           updateEntry(entry.id, {
             status: "done",
             progress: 1,
@@ -272,14 +283,13 @@ export default function VideoWorkspace() {
         await ff.deleteFile(inName).catch(() => undefined);
         completed += 1;
       } catch (err) {
-        if (cancelRef.current) updateEntry(entry.id, { status: "queued", progress: 0 });
-        else {
+        if (current()) {
           updateEntry(entry.id, { status: "error", progress: 0, error: err instanceof Error ? err.message : "Processing failed" });
           if (!ff) { setEngine("cold"); setEngineError("The engine failed to load — check that /ffmpeg assets are reachable."); }
         }
       } finally {
         // Failed encodes may leave virtual FS files; delete them unless the engine was terminated.
-        if (ff && !cancelRef.current) {
+        if (ff && current()) {
           if (inName) await ff.deleteFile(inName).catch(() => undefined);
           if (outName) await ff.deleteFile(outName).catch(() => undefined);
           const nodes = await ff.listDir("/").catch(() => []);
@@ -287,8 +297,10 @@ export default function VideoWorkspace() {
         }
       }
     }
-    setRunning(false);
-    if (completed > 0) pingStats(completed);
+    if (current()) {
+      setRunning(false);
+      if (completed > 0) pingStats(completed);
+    }
   };
 
   const downloadAll = async () => {
@@ -297,12 +309,9 @@ export default function VideoWorkspace() {
     const zip = new JSZip();
     const taken = new Set<string>();
     for (const e of done) {
-      if (e.result!.ext === "zip") {
-        zip.file(uniqueName(withExtension(e.file.name, "frames.zip"), taken), e.result!.blob);
-      } else {
-        zip.file(uniqueName(withExtension(e.file.name, e.result!.ext), taken), e.result!.blob);
-      }
-      taken.add(e.file.name);
+      const name = uniqueName(withExtension(e.file.name, e.result!.ext === "zip" ? "frames.zip" : e.result!.ext), taken);
+      taken.add(name);
+      zip.file(name, e.result!.blob);
     }
     zip.file("MediaScrub-README.txt", "Transcoded locally by FFmpeg.wasm inside your browser.\nNo server received your media.\n");
     const blob = await zip.generateAsync({ type: "blob" });
@@ -596,6 +605,7 @@ export default function VideoWorkspace() {
                     key={entry.id}
                     entry={entry}
                     settings={settings}
+                    removeDisabled={running}
                     onRemove={() => removeEntry(entry.id)}
                     onDownload={() => {
                       if (!entry.result) return;
@@ -618,11 +628,13 @@ export default function VideoWorkspace() {
 function VideoCard({
   entry,
   settings,
+  removeDisabled,
   onRemove,
   onDownload,
 }: {
   entry: Entry;
   settings: VideoSettings;
+  removeDisabled: boolean;
   onRemove: () => void;
   onDownload: () => void;
 }) {
@@ -685,8 +697,8 @@ function VideoCard({
               </button>
             </>
           )}
-          <button onClick={onRemove}
-            className="grid size-9 place-items-center rounded-full border border-ink/10 text-faint hover:text-danger"
+          <button onClick={onRemove} disabled={removeDisabled}
+            className="grid size-9 place-items-center rounded-full border border-ink/10 text-faint hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
             title="Remove" aria-label={`Remove ${entry.file.name}`}>
             <X className="size-4" />
           </button>

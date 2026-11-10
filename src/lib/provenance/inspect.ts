@@ -1,5 +1,6 @@
 import type { ManifestStore } from "@contentauth/c2pa-types";
 import { inspectFile } from "@/lib/metadata/inspect";
+import { sniffProvenanceFormat } from "./format";
 
 export type ProvenanceState = "valid" | "trusted" | "invalid" | "not-detected" | "unsupported" | "unavailable";
 export interface ProvenanceReport {
@@ -63,12 +64,21 @@ async function sdk() {
 
 /** No media upload, external trust list or remote-manifest fetch. All reads happen in a local WASM worker. */
 export async function inspectProvenance(file: File): Promise<ProvenanceReport> {
-  const format = provenanceFormat(file);
   const base: ProvenanceReport = {
-    fileName: file.name, fileSize: file.size, format: format ?? file.type ?? "unknown",
+    fileName: file.name, fileSize: file.size, format: file.type || "unknown",
     state: "unavailable", summary: "Verification unavailable.", synthId: "verification-unavailable",
     manifestCount: 0, activeLabel: null, generator: null, assertions: [], history: [], validation: [], metadataHints: [],
   };
+  let detected: string | null;
+  try {
+    detected = await sniffProvenanceFormat(file);
+  } catch {
+    return { ...base, summary: "Could not read the file header to determine its format. Verification is unavailable." };
+  }
+  // A filename/MIME type is only a fallback hint. A signed JPEG/MP4 renamed .webm
+  // must be inspected as its actual content, not treated as an unsupported WebM.
+  const format = detected ?? provenanceFormat(file);
+  base.format = format ?? file.type ?? "unknown";
   if (!format) return { ...base, state: "unsupported", summary: "This format is not supported by the local C2PA reader." };
   // The pinned C2PA SDK currently throws UnsupportedType for WebM. State this before loading WASM;
   // never conflate a container that cannot be inspected with an inspected file lacking credentials.
@@ -113,7 +123,8 @@ export async function assertNoSignedProvenance(file: File): Promise<void> {
   const result = await inspectProvenance(file);
   // The current C2PA SDK does not support embedded C2PA in WebM. This is NOT a negative inspection;
   // ordinary WebM transcoding remains available, while we label the limitation in the UI/docs.
-  if (result.state === "unsupported" && provenanceFormat(file) === "video/webm") return;
+  if (result.state === "unsupported" && result.format === "video/webm"
+      && await sniffProvenanceFormat(file) === "video/webm") return;
   if (result.state === "not-detected" && file.type.startsWith("image/")) {
     const metadata = await inspectFile(file);
     if (metadata.error) throw new Error("Could not inspect image metadata; destructive processing is paused to protect possible provenance.");

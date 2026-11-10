@@ -269,3 +269,89 @@ test("out-of-duration video trim stops with a clear per-file error", async ({ pa
   await expect(page.getByText(/Trim end 20s exceeds this video's/)).toBeVisible({ timeout: 15000 });
   await expect(page.getByRole("button", { name: "Download output of sample.mp4" })).toHaveCount(0);
 });
+
+test("renaming signed JPEG to WebM cannot bypass Image Studio provenance guard", async ({ page }) => {
+  const { readFile } = await import("node:fs/promises");
+  await page.goto("/image");
+  await page.locator('input[type="file"][data-ready="true"]').setInputFiles({
+    name: "signed.webm", mimeType: "image/jpeg", buffer: await readFile(fixture("c2pa-sample.jpg")),
+  });
+  await page.getByRole("button", { name: /Process 1 file/ }).click();
+  await expect(page.getByText(/Processing paused to protect provenance/)).toBeVisible({ timeout: 45000 });
+  await expect(page.getByRole("button", { name: /Download signed/ })).toHaveCount(0);
+});
+
+test("renaming signed MP4 to WebM preserves verification and blocks transcoding", async ({ page }) => {
+  const { readFile } = await import("node:fs/promises");
+  const disguised = { name: "signed.webm", mimeType: "video/webm", buffer: await readFile(fixture("c2pa-video.mp4")) };
+  await page.goto("/provenance");
+  await page.locator('input[type="file"][data-ready="true"]').setInputFiles(disguised);
+  await page.getByRole("button", { name: "Inspect queued" }).click();
+  await expect(page.getByText("Signature valid · trust not checked").first()).toBeVisible({ timeout: 45000 });
+  await page.goto("/video");
+  await page.locator('input[type="file"][data-ready="true"]').setInputFiles(disguised);
+  await page.getByRole("button", { name: /Run on 1 file/ }).click();
+  await expect(page.getByText(/Processing paused to protect provenance/)).toBeVisible({ timeout: 45000 });
+  await expect(page.getByRole("button", { name: "Download output of signed.webm" })).toHaveCount(0);
+});
+
+test("unsigned WebM metadata remux downloads a valid local file", async ({ page }) => {
+  const posts: string[] = [];
+  page.on("request", request => { if (request.method() === "POST") posts.push(request.url()); });
+  await page.goto("/metadata");
+  await page.locator('input[type="file"][data-ready="true"]').setInputFiles(fixture("sample.webm"));
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: /Re-encode \/ remux/ }).click();
+  const result = await download;
+  expect(result.suggestedFilename()).toBe("clean-sample.webm");
+  const { readFile } = await import("node:fs/promises");
+  const bytes = await readFile(await result.path());
+  expect(bytes.subarray(0, 4).toString("hex")).toBe("1a45dfa3");
+  expect(posts).toEqual([]);
+});
+
+test("image Stop followed by retry cannot publish a stale result", async ({ page }) => {
+  await page.goto("/image");
+  await page.locator('input[type="file"][data-ready="true"]').setInputFiles([fixture("c2pa-sample.jpg"), fixture("sample.png")]);
+  await page.getByRole("button", { name: /Process 2 files/ }).click();
+  await page.getByRole("button", { name: "Stop" }).click();
+  await expect(page.getByRole("button", { name: /Process 2 files/ })).toBeVisible();
+  await page.getByRole("button", { name: /Process 2 files/ }).click();
+  await expect(page.getByText(/Processing paused to protect provenance/)).toBeVisible({ timeout: 45000 });
+  await expect(page.getByRole("button", { name: "Download sample.png" })).toBeVisible({ timeout: 45000 });
+  await expect(page.getByText("1/2 done")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Download c2pa-sample.jpg" })).toHaveCount(0);
+});
+
+test("video Cancel followed by retry finishes one fresh conversion", async ({ page }) => {
+  await page.goto("/video");
+  await page.locator('input[type="file"][data-ready="true"]').setInputFiles(fixture("sample.webm"));
+  await page.getByRole("button", { name: /Resize Change resolution/ }).click();
+  await page.getByRole("button", { name: "1920", exact: true }).click();
+  await page.getByRole("button", { name: /Run on 1 file/ }).click();
+  await page.getByRole("button", { name: "Cancel & kill engine" }).click();
+  await page.getByRole("button", { name: "640", exact: true }).click();
+  await page.getByRole("button", { name: "webm", exact: true }).click();
+  await page.getByRole("button", { name: "VP8 (fast)" }).click();
+  await page.getByRole("switch").click();
+  await page.getByRole("button", { name: /Run on 1 file/ }).click();
+  await expect(page.getByRole("button", { name: "Download output of sample.webm" })).toBeVisible({ timeout: 60000 });
+  await expect(page.getByText("1/1 done")).toBeVisible();
+});
+
+test("video ZIP preserves both files when batch inputs share a name", async ({ page }) => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(fixture("sample.webm"));
+  const repeated = { name: "repeated.webm", mimeType: "video/webm", buffer: source };
+  await page.goto("/video");
+  await page.locator('input[type="file"][data-ready="true"]').setInputFiles([repeated, repeated]);
+  await page.getByRole("button", { name: /Run on 2 files/ }).click();
+  await expect(page.getByText("2/2 done")).toBeVisible({ timeout: 100000 });
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download all (.zip)" }).click();
+  const JSZip = (await import("jszip")).default;
+  const zip = await JSZip.loadAsync(await readFile(await (await download).path()));
+  const names = Object.keys(zip.files).filter(name => name.endsWith(".mp4"));
+  expect(names.sort()).toEqual(["repeated-1.mp4", "repeated.mp4"]);
+  for (const name of names) expect((await zip.file(name)!.async("uint8array")).length).toBeGreaterThan(100);
+});

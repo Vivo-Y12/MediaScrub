@@ -63,6 +63,7 @@ export default function ImageWorkspace() {
   const [compareId, setCompareId] = useState<string | null>(null);
   const processorRef = useRef<ImageProcessor | null>(null);
   const cancelRef = useRef(false);
+  const runRef = useRef(0);
   const entriesRef = useRef<Entry[]>([]);
   useEffect(() => { entriesRef.current = entries; }, [entries]);
 
@@ -105,6 +106,9 @@ export default function ImageWorkspace() {
 
   const clearAll = useCallback(() => {
     cancelRef.current = true;
+    runRef.current += 1;
+    processorRef.current?.destroy();
+    processorRef.current = null;
     setEntries((prev) => {
       prev.forEach((e) => {
         URL.revokeObjectURL(e.srcUrl);
@@ -117,6 +121,8 @@ export default function ImageWorkspace() {
 
   // Object URLs must be revoked directly; a setState updater during unmount may never execute.
   useEffect(() => () => {
+    cancelRef.current = true;
+    runRef.current += 1;
     entriesRef.current.forEach(e => { URL.revokeObjectURL(e.srcUrl); if (e.result) URL.revokeObjectURL(e.result.url); });
   }, []);
 
@@ -125,22 +131,24 @@ export default function ImageWorkspace() {
     if (!processorRef.current) processorRef.current = new ImageProcessor();
     const processor = processorRef.current;
     cancelRef.current = false;
+    const runId = ++runRef.current;
+    const current = () => !cancelRef.current && runRef.current === runId;
     setRunning(true);
 
     const snapshot = entries.filter((e) => e.status === "queued" || e.status === "error");
     let completed = 0;
     await Promise.all(
       snapshot.map(async (entry) => {
-        if (cancelRef.current) return;
+        if (!current()) return;
         updateEntry(entry.id, { status: "processing", progress: 0.05, error: undefined, result: undefined });
         try {
           await assertNoSignedProvenance(entry.file);
-          if (cancelRef.current) return;
-          const { promise } = processor.process(entry.file, settings, (p) =>
-            updateEntry(entry.id, { progress: p })
-          );
+          if (!current()) return;
+          const { promise } = processor.process(entry.file, settings, (p) => {
+            if (current()) updateEntry(entry.id, { progress: p });
+          });
           const res = await promise;
-          if (cancelRef.current) return;
+          if (!current()) return;
           completed += 1;
           updateEntry(entry.id, {
             status: "done",
@@ -148,7 +156,7 @@ export default function ImageWorkspace() {
             result: { ...res, url: URL.createObjectURL(res.blob) },
           });
         } catch (err) {
-          if (cancelRef.current) { updateEntry(entry.id, { status: "queued", progress: 0 }); return; }
+          if (!current()) return;
           updateEntry(entry.id, {
             status: "error",
             progress: 0,
@@ -157,12 +165,15 @@ export default function ImageWorkspace() {
         }
       })
     );
-    setRunning(false);
-    if (completed > 0) pingStats(completed);
+    if (current()) {
+      setRunning(false);
+      if (completed > 0) pingStats(completed);
+    }
   };
 
   const cancel = () => {
     cancelRef.current = true;
+    runRef.current += 1;
     processorRef.current?.destroy();
     processorRef.current = null;
     setEntries(prev => prev.map(e => e.status === "processing" ? { ...e, status: "queued", progress: 0 } : e));
@@ -423,6 +434,7 @@ export default function ImageWorkspace() {
                   <ImageCard
                     key={entry.id}
                     entry={entry}
+                    removeDisabled={running}
                     onRemove={() => removeEntry(entry.id)}
                     onCompare={() => entry.result && setCompareId(entry.id)}
                     onDownload={() =>
@@ -466,11 +478,13 @@ export default function ImageWorkspace() {
 
 function ImageCard({
   entry,
+  removeDisabled,
   onRemove,
   onCompare,
   onDownload,
 }: {
   entry: Entry;
+  removeDisabled: boolean;
   onRemove: () => void;
   onCompare: () => void;
   onDownload: () => void;
@@ -581,7 +595,8 @@ function ImageCard({
         )}
         <button
           onClick={onRemove}
-          className="grid size-9 place-items-center rounded-full border border-ink/10 text-faint transition-colors hover:text-danger"
+          disabled={removeDisabled}
+          className="grid size-9 place-items-center rounded-full border border-ink/10 text-faint transition-colors hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
           title="Remove"
           aria-label={`Remove ${entry.file.name}`}
         >
