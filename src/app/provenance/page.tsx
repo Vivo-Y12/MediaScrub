@@ -2,7 +2,8 @@
 /* eslint-disable @next/next/no-img-element -- previews are local blob URLs, not server-optimizable assets */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, ArrowDownToLine, CheckCircle2, FileSearch, Fingerprint, Info, Loader2, ShieldAlert, ShieldCheck, Trash2, X } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, ArrowDownToLine, ArrowUpRight, CheckCircle2, FileSearch, Info, Loader2, ShieldAlert, ShieldCheck, Trash2, X } from "lucide-react";
 import Dropzone from "@/components/dropzone";
 import WorkspaceShell from "@/components/workspace-shell";
 import { inspectProvenance, reportBlob, type ProvenanceReport } from "@/lib/provenance/inspect";
@@ -59,13 +60,36 @@ export default function ProvenanceWorkspace() {
   const badge = result ? statuses[result.state] : null;
 
   return <WorkspaceShell kicker="// 00 — synthid & provenance" title="Inspect the record. Don't rewrite it." description="Read original image and video files locally. Verify embedded C2PA Content Credentials with the official WebAssembly reader, review provenance history and export a technical report. No media is uploaded.">
-    <div className="mb-7 grid gap-3 sm:grid-cols-3">
-      {[
-        { icon: Fingerprint, title: "SynthID status", body: "Verification unavailable: no validated public SynthID detector is bundled. Never interpret this as a negative scan." },
-        { icon: ShieldCheck, title: "C2PA verification", body: "Cryptographic structure/signature checked locally. Trust chains and remote manifests are not fetched." },
-        { icon: FileSearch, title: "Original preserved", body: "Inspection never changes your file. Re-encoding elsewhere may invalidate credentials; those operations are guarded." },
-      ].map(c => <div key={c.title} className="card-line rounded-2xl bg-panel p-5"><c.icon className="size-5 text-acid" /><h2 className="mt-3 font-display text-base font-semibold">{c.title}</h2><p className="mt-2 text-xs leading-relaxed text-dim">{c.body}</p></div>)}
-    </div>
+    <section id="synthid-check" aria-labelledby="official-synthid-check" className="mb-6 rounded-2xl border border-acid/30 bg-acid/[0.05] p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-2xl">
+          <p className="kicker">01 · watermark check · external</p>
+          <h2 id="official-synthid-check" className="font-display mt-2 text-lg font-semibold">SynthID: use Google’s official detector</h2>
+          <p className="mt-2 text-sm leading-relaxed text-dim">
+            MediaScrub has no built-in SynthID detector. Google’s separate site accepts images, video and audio:
+            you must open it, sign in and choose a file yourself. MediaScrub never sends your file or receives Google’s result.
+          </p>
+        </div>
+        <a href="https://synthid.com/" target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-acid px-4 py-2 text-xs font-semibold text-[#0a0b05] hover:opacity-85">
+          Open Google’s SynthID Detector <ArrowUpRight className="size-4" />
+        </a>
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-warn">
+        Optional external upload to Google under its own terms · No automatic upload · A negative result does not prove human origin.
+      </p>
+    </section>
+    <section id="c2pa-check" aria-labelledby="c2pa-check-heading">
+      <div className="mb-5 rounded-2xl border border-ink/10 bg-panel p-5 sm:p-6">
+        <p className="kicker">02 · Content Credentials · on-device</p>
+        <h2 id="c2pa-check-heading" className="font-display mt-2 flex items-center gap-2 text-lg font-semibold">
+          <ShieldCheck className="size-5 text-acid" /> C2PA provenance inspection
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-dim">
+          Choose an original file below to inspect its signed provenance locally. The file is not modified or uploaded.
+          A valid signature is not proof that you trust the signer, and no credential found is not a SynthID result.
+        </p>
+      </div>
     <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
       <aside className="min-w-0 space-y-4">
         <Dropzone compact accept="image/*,video/*,.tif,.tiff,.avif,.mov,.mkv,.avi" title="Add original media" subtitle="Images & videos · no upload" onFiles={addFiles} />
@@ -97,5 +121,19 @@ export default function ProvenanceWorkspace() {
         </>}
       </section>
     </div>
+    </section>
+    <section id="metadata-privacy" aria-labelledby="metadata-privacy-heading" className="mt-7 rounded-2xl border border-ink/10 bg-panel p-5 sm:p-6">
+      <p className="kicker">03 · personal metadata · on-device</p>
+      <h2 id="metadata-privacy-heading" className="font-display mt-2 flex items-center gap-2 text-lg font-semibold">
+        <FileSearch className="size-5 text-acid" /> Metadata & Privacy
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-dim">
+        Inspect camera and location data or selectively remove supported private JPEG EXIF fields such as GPS and device serials.
+        This is not a SynthID check or a way to erase signed AI-origin records.
+      </p>
+      <Link href="/metadata" className="mt-4 inline-flex items-center gap-2 rounded-full border border-acid/40 px-4 py-2 text-xs font-semibold text-acid hover:bg-acid/10">
+        Open Metadata & Privacy <ArrowUpRight className="size-4" />
+      </Link>
+    </section>
   </WorkspaceShell>;
 }

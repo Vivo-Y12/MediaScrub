@@ -355,3 +355,27 @@ test("video ZIP preserves both files when batch inputs share a name", async ({ p
   expect(names.sort()).toEqual(["repeated-1.mp4", "repeated.mp4"]);
   for (const name of names) expect((await zip.file(name)!.async("uint8array")).length).toBeGreaterThan(100);
 });
+
+test("optional official SynthID link never transmits a file from MediaScrub", async ({ page }) => {
+  const offsite: string[] = [];
+  const posts: string[] = [];
+  page.on("request", request => {
+    if (new URL(request.url()).origin !== "http://localhost:3000") offsite.push(request.url());
+    if (request.method() === "POST") posts.push(request.url());
+  });
+  await page.goto("/provenance");
+  await expect(page.getByRole("heading", { name: "SynthID: use Google’s official detector" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "C2PA provenance inspection" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Metadata & Privacy" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Open Metadata & Privacy/ })).toHaveAttribute("href", "/metadata");
+  const official = page.getByRole("link", { name: /Open Google’s SynthID Detector/ });
+  await expect(official).toHaveAttribute("href", "https://synthid.com/");
+  await expect(official).toHaveAttribute("target", "_blank");
+  await expect(official).toHaveAttribute("rel", /noopener noreferrer/);
+  await page.locator('input[type="file"][data-ready="true"]').setInputFiles(fixture("sample.png"));
+  await page.getByRole("button", { name: "Inspect queued" }).click();
+  await expect(page.getByText("No C2PA manifest detected", { exact: true }).first()).toBeVisible({ timeout: 45000 });
+  await expect(page.getByText("SynthID: verification unavailable.", { exact: false })).toBeVisible();
+  expect(offsite).toEqual([]);
+  expect(posts).toEqual([]);
+});

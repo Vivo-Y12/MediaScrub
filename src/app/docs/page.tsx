@@ -146,7 +146,7 @@ export default function DocsPage() {
             <AlertTriangle className="size-5 text-warn" /> What we deliberately do not do
           </h2>
           <ul className="mt-4 space-y-2.5 text-sm leading-relaxed text-dim">
-            <li>· <span className="text-ink">No invisible-watermark removal claims.</span> SynthID-class watermarks survive re-encoding; defeating them is out of scope.</li>
+            <li>· <span className="text-ink">No in-app SynthID detector or removal claims.</span> For an actual check, the Provenance page links to Google’s separate portal; signing in and uploading there is optional. Metadata edits do not prove a watermark is gone.</li>
             <li>· <span className="text-ink">No provenance forgery.</span> A separate inspector validates embedded C2PA records locally. Processing stops if a signed manifest is detected; no credentials are forged.</li>
             <li>· <span className="text-ink">No silent degradation.</span> If an operation can&apos;t run, you get the real error and a suggestion — never a quietly-wrong file.</li>
             <li>· <span className="text-ink">No cloud fallback.</span> If local processing fails, that&apos;s the answer — files are never rerouted to a server.</li>

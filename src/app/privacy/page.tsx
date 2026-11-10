@@ -5,11 +5,11 @@ import Reveal from "@/components/reveal";
 export const metadata: Metadata = {
   title: "Privacy architecture",
   description:
-    "How MediaScrub processes media without any server ever seeing it — and how to verify that claim yourself in under a minute.",
+    "How MediaScrub processes media without uploading it to MediaScrub servers, and where an optional external SynthID check differs.",
 };
 
 const NEVER = [
-  "Your images or videos — there is no endpoint that accepts media",
+  "Your images or videos — MediaScrub has no endpoint that accepts media",
   "File names, thumbnails, dimensions, or any derived data",
   "Account identifiers — accounts don't exist",
   "Analytics beacons, fingerprinting, or ad-tech pixels",
@@ -71,6 +71,12 @@ export default function PrivacyPage() {
           </div>
         </Reveal>
       </div>
+
+      <p className="mt-6 rounded-2xl border border-warn/25 bg-warn/[0.04] p-4 text-sm leading-relaxed text-dim">
+        <strong className="text-ink">Optional external SynthID check:</strong> The link on our Provenance page opens Google’s separate website.
+        MediaScrub never sends your file there. If you choose to sign in and upload it on Google’s site,
+        that upload is governed by Google’s terms and privacy notice, not this local-processing promise.
+      </p>
 
       <Reveal delay={0.16}>
         <h2 className="font-display mt-16 text-2xl font-semibold">Verify it yourself — 60 seconds</h2>

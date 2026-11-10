@@ -8,7 +8,7 @@
 
 Use **SynthID & Provenance** to inspect supported Content Credentials (C2PA). See the available validation result, recorded history, and details, then save a report if you need one. Signed files are protected from edits that would break their credentials.
 
-**SynthID detection is not available.** SynthID and C2PA are different technologies: not finding Content Credentials does **not** mean a file is human-made or free of invisible watermarks.
+**MediaScrub itself cannot detect SynthID.** Its provenance page offers an optional link to [Google’s official SynthID Detector](https://synthid.com/) for an actual check. That is a separate site: you must choose to sign in and upload there, and its result does not appear in MediaScrub. SynthID and C2PA are different technologies; not finding Content Credentials does **not** mean a file is human-made or free of invisible watermarks.
 
 ### Edit images in batches
 
