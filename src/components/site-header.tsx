@@ -60,7 +60,7 @@ export default function SiteHeader() {
           <span className="kicker hidden lg:inline">{"// "}on-device</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
+        <nav className="hidden items-center gap-1 xl:flex" aria-label="Primary">
           {LINKS.map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
             return (
@@ -96,7 +96,7 @@ export default function SiteHeader() {
             {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>
           <button
-            className="grid size-9 place-items-center rounded-full border border-ink/10 text-dim md:hidden"
+            className="grid size-9 place-items-center rounded-full border border-ink/10 text-dim xl:hidden"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle menu"
             aria-expanded={open}
@@ -107,7 +107,7 @@ export default function SiteHeader() {
       </div>
 
       {open && (
-        <nav className="border-t border-ink/8 bg-void px-5 py-3 md:hidden" aria-label="Mobile">
+        <nav className="border-t border-ink/8 bg-void px-5 py-3 xl:hidden" aria-label="Mobile">
           {LINKS.map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
             return (

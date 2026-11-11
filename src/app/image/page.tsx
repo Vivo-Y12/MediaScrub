@@ -137,8 +137,9 @@ export default function ImageWorkspace() {
 
     const snapshot = entries.filter((e) => e.status === "queued" || e.status === "error");
     let completed = 0;
-    await Promise.all(
-      snapshot.map(async (entry) => {
+    // Bound both provenance reads and image jobs: a large drop must not scan every file at once.
+    for (let offset = 0; offset < snapshot.length && current(); offset += 3) {
+      await Promise.all(snapshot.slice(offset, offset + 3).map(async (entry) => {
         if (!current()) return;
         updateEntry(entry.id, { status: "processing", progress: 0.05, error: undefined, result: undefined });
         try {
@@ -163,8 +164,8 @@ export default function ImageWorkspace() {
             error: err instanceof Error ? err.message : "Processing failed",
           });
         }
-      })
-    );
+      }));
+    }
     if (current()) {
       setRunning(false);
       if (completed > 0) pingStats(completed);
@@ -223,7 +224,7 @@ export default function ImageWorkspace() {
                   <label
                     key={opt.value}
                     className={cn(
-                      "flex cursor-pointer items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-sm transition-colors",
+                      "flex cursor-pointer items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-sm transition-colors focus-within:ring-2 focus-within:ring-acid/60",
                       settings.format === opt.value
                         ? "border-acid/50 bg-acid/[0.07] text-ink"
                         : "border-ink/10 text-dim hover:border-ink/25",
@@ -234,16 +235,10 @@ export default function ImageWorkspace() {
                       <input
                         type="radio"
                         name="format"
-                        className="hidden"
+                        className="size-4 shrink-0 accent-acid"
                         disabled={disabled}
                         checked={settings.format === opt.value}
                         onChange={() => setSettings((s) => ({ ...s, format: opt.value }))}
-                      />
-                      <span
-                        className={cn(
-                          "size-2 rounded-full",
-                          settings.format === opt.value ? "bg-acid" : "bg-ink/20"
-                        )}
                       />
                       <span className="text-ink">{opt.label}</span>
                     </span>

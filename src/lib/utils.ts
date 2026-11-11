@@ -40,11 +40,13 @@ export function downloadBlob(blob: Blob, filename: string) {
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
+  a.style.display = "none";
   document.body.appendChild(a);
   a.click();
-  a.remove();
-  // Give the browser a tick to begin the download before revoking.
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  // Firefox may cancel a blob download if its anchor is removed synchronously.
+  // Give slower mobile browsers time to start reading before revoking the URL.
+  setTimeout(() => a.remove(), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
 /** Replace the extension of a filename. */

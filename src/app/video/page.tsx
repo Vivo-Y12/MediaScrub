@@ -79,15 +79,20 @@ async function probeVideo(url: string): Promise<{ duration: number | null; width
   return new Promise((resolve) => {
     const v = document.createElement("video");
     v.preload = "metadata";
+    // Some mobile browsers never fire metadata or error for unsupported containers.
+    const timer = window.setTimeout(() => done(null, null, null), 10_000);
     const done = (d: number | null, w: number | null, h: number | null) => {
-      v.src = "";
+      window.clearTimeout(timer);
+      v.onloadedmetadata = null;
+      v.onerror = null;
+      v.removeAttribute("src");
       resolve({ duration: d, width: w, height: h });
     };
     v.onloadedmetadata = () => {
       const d = isFinite(v.duration) ? v.duration : null;
       done(d, v.videoWidth || null, v.videoHeight || null);
     };
-    v.onerror = () => done(null, null, null); // container the <video> tag can't probe — ffmpeg may still decode it
+    v.onerror = () => done(null, null, null); // browser cannot probe this container; FFmpeg may still decode it
     v.src = url;
   });
 }

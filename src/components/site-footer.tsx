@@ -5,7 +5,7 @@ const COLS: { title: string; links: { href: string; label: string }[] }[] = [
   {
     title: "Tools",
     links: [
-      { href: "/provenance", label: "SynthID & provenance" },
+      { href: "/provenance", label: "Provenance inspector" },
       { href: "/image", label: "Image studio" },
       { href: "/video", label: "Video lab" },
       { href: "/metadata", label: "Metadata inspector" },
