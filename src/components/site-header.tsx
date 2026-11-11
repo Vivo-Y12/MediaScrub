@@ -7,7 +7,7 @@ import { Image as ImageIcon, Film, ScanSearch, BookOpen, ShieldCheck, Moon, Sun,
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "/provenance", label: "SynthID & Provenance", icon: ShieldCheck },
+  { href: "/provenance", label: "Provenance", icon: ShieldCheck },
   { href: "/image", label: "Image", icon: ImageIcon },
   { href: "/video", label: "Video", icon: Film },
   { href: "/metadata", label: "Metadata", icon: ScanSearch },

@@ -59,29 +59,10 @@ export default function ProvenanceWorkspace() {
   const result = active?.report;
   const badge = result ? statuses[result.state] : null;
 
-  return <WorkspaceShell kicker="// 00 — synthid & provenance" title="Inspect the record. Don't rewrite it." description="Read original image and video files locally. Verify embedded C2PA Content Credentials with the official WebAssembly reader, review provenance history and export a technical report. No media is uploaded.">
-    <section id="synthid-check" aria-labelledby="official-synthid-check" className="mb-6 rounded-2xl border border-acid/30 bg-acid/[0.05] p-5 sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-2xl">
-          <p className="kicker">01 · watermark check · external</p>
-          <h2 id="official-synthid-check" className="font-display mt-2 text-lg font-semibold">SynthID: use Google’s official detector</h2>
-          <p className="mt-2 text-sm leading-relaxed text-dim">
-            MediaScrub has no built-in SynthID detector. Google’s separate site accepts images, video and audio:
-            you must open it, sign in and choose a file yourself. MediaScrub never sends your file or receives Google’s result.
-          </p>
-        </div>
-        <a href="https://synthid.com/" target="_blank" rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-acid px-4 py-2 text-xs font-semibold text-[#0a0b05] hover:opacity-85">
-          Open Google’s SynthID Detector <ArrowUpRight className="size-4" />
-        </a>
-      </div>
-      <p className="mt-3 text-xs leading-relaxed text-warn">
-        Optional external upload to Google under its own terms · No automatic upload · A negative result does not prove human origin.
-      </p>
-    </section>
+  return <WorkspaceShell kicker="// 00 — provenance" title="Inspect the record. Don't rewrite it." description="Read original image and video files locally. Verify embedded C2PA Content Credentials with the official WebAssembly reader, review provenance history and export a technical report. No media is uploaded.">
     <section id="c2pa-check" aria-labelledby="c2pa-check-heading">
       <div className="mb-5 rounded-2xl border border-ink/10 bg-panel p-5 sm:p-6">
-        <p className="kicker">02 · Content Credentials · on-device</p>
+        <p className="kicker">01 · Content Credentials · on-device</p>
         <h2 id="c2pa-check-heading" className="font-display mt-2 flex items-center gap-2 text-lg font-semibold">
           <ShieldCheck className="size-5 text-acid" /> C2PA provenance inspection
         </h2>
@@ -123,7 +104,7 @@ export default function ProvenanceWorkspace() {
     </div>
     </section>
     <section id="metadata-privacy" aria-labelledby="metadata-privacy-heading" className="mt-7 rounded-2xl border border-ink/10 bg-panel p-5 sm:p-6">
-      <p className="kicker">03 · personal metadata · on-device</p>
+      <p className="kicker">02 · personal metadata · on-device</p>
       <h2 id="metadata-privacy-heading" className="font-display mt-2 flex items-center gap-2 text-lg font-semibold">
         <FileSearch className="size-5 text-acid" /> Metadata & Privacy
       </h2>

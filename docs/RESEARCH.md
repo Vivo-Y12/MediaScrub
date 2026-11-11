@@ -44,7 +44,7 @@ Research date: 2026-11-10. Sources: public [RemoveSynthID home](https://removesy
 
 ## Key gaps remaining
 
-- Google’s official [SynthID Detector](https://synthid.com/) now accepts manual image/video/audio uploads. Its terms prohibit automated submissions/scraping; Google Cloud’s [AI Content Detection API](https://cloud.google.com/security/compliance/ai-trust-and-transparency) is in private preview, not a public browser SDK. MediaScrub therefore offers only a clearly labelled, optional external link—no automatic upload and no in-app SynthID result. It does not promise 100% detection; missing watermarks, heavy edits, unsupported creators and rare false positives remain possible. Metadata heuristics are never SynthID evidence.
+- No local/public embeddable SynthID media detector is bundled. Automated submissions/scraping of Google’s public portal are prohibited by its terms, and Google Cloud’s AI Content Detection API is in private preview. MediaScrub does not provide an external-check handoff or claim a SynthID result. Metadata heuristics are never SynthID evidence.
 - Browser SDK currently returns UnsupportedType for WebM; no negative C2PA status for WebM. Signed MP4 fixture is tested; MOV/MKV and other formats still need signed-video fixtures and device testing.
 - Selective editor handles JPEG EXIF only, not IPTC/XMP/PNG/MP4 deep metadata editing. Multiple EXIF/XMP locations may still reveal location. No promise of universal anonymization.
 - Animated GIF/AVIF input handling and codec diversity remain limited to the existing runtime; no HEIC decoder bundled.

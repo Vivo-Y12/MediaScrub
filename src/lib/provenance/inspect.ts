@@ -128,10 +128,10 @@ export async function assertNoSignedProvenance(file: File): Promise<void> {
   if (result.state === "not-detected" && file.type.startsWith("image/")) {
     const metadata = await inspectFile(file);
     if (metadata.error) throw new Error("Could not inspect image metadata; destructive processing is paused to protect possible provenance.");
-    if (metadata.hasProvenanceHints) throw new Error("Possible AI-origin/provenance metadata found. Processing paused so it is not silently discarded; inspect this file in SynthID & Provenance.");
+    if (metadata.hasProvenanceHints) throw new Error("Possible AI-origin/provenance metadata found. Processing paused so it is not silently discarded; inspect this file in Provenance.");
   }
   if (result.state !== "not-detected") {
-    throw new Error(`Processing paused to protect provenance (${result.state}). Inspect this file in SynthID & Provenance. Only media with a completed no-manifest C2PA inspection can be processed here.`);
+    throw new Error(`Processing paused to protect provenance (${result.state}). Inspect this file in Provenance. Only media with a completed no-manifest C2PA inspection can be processed here.`);
   }
 }
 

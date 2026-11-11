@@ -5,8 +5,8 @@ const fixture = (name: string) => path.join(__dirname, "fixtures", name);
 
 test("navigation and privacy-first page", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "SynthID & Provenance", exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "SynthID & Provenance", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Provenance", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Provenance", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Inspect the record. Don't rewrite it." })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole("button", { name: "Toggle menu" })).toBeVisible();
@@ -356,7 +356,7 @@ test("video ZIP preserves both files when batch inputs share a name", async ({ p
   for (const name of names) expect((await zip.file(name)!.async("uint8array")).length).toBeGreaterThan(100);
 });
 
-test("optional official SynthID link never transmits a file from MediaScrub", async ({ page }) => {
+test("local C2PA scan has no external detector handoff or media upload", async ({ page }) => {
   const offsite: string[] = [];
   const posts: string[] = [];
   page.on("request", request => {
@@ -364,14 +364,11 @@ test("optional official SynthID link never transmits a file from MediaScrub", as
     if (request.method() === "POST") posts.push(request.url());
   });
   await page.goto("/provenance");
-  await expect(page.getByRole("heading", { name: "SynthID: use Google’s official detector" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "C2PA provenance inspection" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Metadata & Privacy" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Open Metadata & Privacy/ })).toHaveAttribute("href", "/metadata");
-  const official = page.getByRole("link", { name: /Open Google’s SynthID Detector/ });
-  await expect(official).toHaveAttribute("href", "https://synthid.com/");
-  await expect(official).toHaveAttribute("target", "_blank");
-  await expect(official).toHaveAttribute("rel", /noopener noreferrer/);
+  await expect(page.locator('a[href*="synthid.com"]')).toHaveCount(0);
+  await expect(page.getByText("01 · watermark check · external")).toHaveCount(0);
   await page.locator('input[type="file"][data-ready="true"]').setInputFiles(fixture("sample.png"));
   await page.getByRole("button", { name: "Inspect queued" }).click();
   await expect(page.getByText("No C2PA manifest detected", { exact: true }).first()).toBeVisible({ timeout: 45000 });
