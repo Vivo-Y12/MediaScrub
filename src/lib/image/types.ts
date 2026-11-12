@@ -29,6 +29,8 @@ export interface ImageSettings {
   alphaFill: string;
   /** Canvas re-encode always strips EXIF/XMP; kept as explicit flag for honesty in the UI. */
   stripMetadata: boolean;
+  /** Opt-in, unverified pixel reprocessing; never a SynthID detection/removal verdict. */
+  experimentalPixelReprocess: boolean;
   /** Clockwise rotation applied after cropping. */
   rotation: 0 | 90 | 180 | 270;
   /** Crop rectangle in source percentages. */
@@ -42,6 +44,7 @@ export const DEFAULT_IMAGE_SETTINGS: ImageSettings = {
   maxDimension: 0,
   alphaFill: "#ffffff",
   stripMetadata: true,
+  experimentalPixelReprocess: false,
   rotation: 0,
   crop: { x: 0, y: 0, width: 100, height: 100 },
 };

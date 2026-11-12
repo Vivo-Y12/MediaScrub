@@ -307,6 +307,22 @@ export default function ImageWorkspace() {
             </div>
           </div>
 
+          <div className="space-y-2 border-t border-ink/10 pt-5">
+            <p className="kicker">Experimental pixel reprocessing</p>
+            <label className="flex cursor-pointer items-start gap-2.5 text-xs text-ink">
+              <input
+                type="checkbox"
+                checked={settings.experimentalPixelReprocess}
+                onChange={(e) => setSettings((s) => ({ ...s, experimentalPixelReprocess: e.target.checked }))}
+                className="mt-0.5 size-4 shrink-0 accent-acid"
+              />
+              <span>Reprocess image pixels locally (opt-in)</span>
+            </label>
+            <p className="text-[0.7rem] leading-relaxed text-warn">
+              Research experiment, not a SynthID detector or verified remover. It changes image detail, may reduce quality, and cannot confirm a watermark is gone. Signed Content Credentials remain protected.
+            </p>
+          </div>
+
           <div className="space-y-3 border-t border-ink/10 pt-5">
             <p className="kicker">Crop & rotate</p>
             <p className="text-[0.7rem] leading-relaxed text-dim">Crop coordinates are percentages of each original image; all files in this batch share the settings.</p>

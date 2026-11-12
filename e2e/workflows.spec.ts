@@ -138,9 +138,10 @@ test("video frame extraction produces actual JPEGs", async ({ page }) => {
   expect(Object.keys(zip.files).filter(n => n.endsWith(".jpg")).length).toBeGreaterThan(0);
 });
 
-test("no cross-origin request occurs during C2PA inspection", async ({ page }) => {
+test("no cross-origin request occurs during C2PA inspection", async ({ page }, testInfo) => {
   const external: string[] = [];
-  page.on("request", r => { if (new URL(r.url()).origin !== "http://localhost:3000" && !r.url().startsWith("blob:")) external.push(r.url()); });
+  const appOrigin = new URL(testInfo.project.use.baseURL ?? "http://localhost:3000").origin;
+  page.on("request", r => { if (new URL(r.url()).origin !== appOrigin && !r.url().startsWith("blob:")) external.push(r.url()); });
   await page.goto("/provenance");
   await page.locator('input[type="file"][data-ready="true"]').setInputFiles(fixture("c2pa-sample.jpg"));
   await page.getByRole("button", { name: "Inspect queued" }).click();
@@ -312,9 +313,16 @@ test("unsigned WebM metadata remux downloads a valid local file", async ({ page 
 
 test("image Stop followed by retry cannot publish a stale result", async ({ page }) => {
   await page.goto("/image");
+  // Hold the first provenance read long enough to exercise cancellation, not a finished job.
+  await page.route("**/c2pa/c2pa_bg.wasm", async route => {
+    await new Promise(resolve => setTimeout(resolve, 700));
+    // A cancelled browser request can be handled while the artificial delay is pending.
+    await route.continue().catch(() => undefined);
+  });
   await page.locator('input[type="file"][data-ready="true"]').setInputFiles([fixture("c2pa-sample.jpg"), fixture("sample.png")]);
   await page.getByRole("button", { name: /Process 2 files/ }).click();
   await page.getByRole("button", { name: "Stop" }).click();
+  await page.unroute("**/c2pa/c2pa_bg.wasm");
   await expect(page.getByRole("button", { name: /Process 2 files/ })).toBeVisible();
   await page.getByRole("button", { name: /Process 2 files/ }).click();
   await expect(page.getByText(/Processing paused to protect provenance/)).toBeVisible({ timeout: 45000 });
@@ -356,11 +364,12 @@ test("video ZIP preserves both files when batch inputs share a name", async ({ p
   for (const name of names) expect((await zip.file(name)!.async("uint8array")).length).toBeGreaterThan(100);
 });
 
-test("local C2PA scan has no external detector handoff or media upload", async ({ page }) => {
+test("local C2PA scan has no external detector handoff or media upload", async ({ page }, testInfo) => {
   const offsite: string[] = [];
   const posts: string[] = [];
+  const appOrigin = new URL(testInfo.project.use.baseURL ?? "http://localhost:3000").origin;
   page.on("request", request => {
-    if (new URL(request.url()).origin !== "http://localhost:3000") offsite.push(request.url());
+    if (new URL(request.url()).origin !== appOrigin) offsite.push(request.url());
     if (request.method() === "POST") posts.push(request.url());
   });
   await page.goto("/provenance");

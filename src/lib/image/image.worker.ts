@@ -6,6 +6,7 @@
  * only raw pixels survive the round-trip.
  */
 import UTIF from "utif2";
+import { reprocessPixels } from "./pixel-reprocess";
 import {
   FORMAT_EXT,
   FORMAT_MIME,
@@ -157,6 +158,13 @@ async function processJob(job: ImageJobRequest): Promise<ImageJobResult> {
   bitmap.close();
 
   post({ type: "progress", id: job.id, progress: 0.75 });
+  if (settings.experimentalPixelReprocess) {
+    if (outW * outH > 12_000_000) {
+      warnings.push("Experimental reprocessing uses extra image memory; a large image may be slow on mobile.");
+    }
+    warnings.push(...await reprocessPixels(canvas, !opaque));
+    post({ type: "progress", id: job.id, progress: 0.88 });
+  }
 
   const quality = LOSSLESS.has(targetMime) ? undefined : settings.quality;
   const blob = await canvas.convertToBlob({ type: targetMime, quality });
