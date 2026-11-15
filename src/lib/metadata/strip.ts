@@ -19,6 +19,7 @@ export async function stripImageMetadata(
     alphaFill: "#ffffff",
     stripMetadata: true,
     experimentalPixelReprocess: false,
+    reprocessPasses: 1,
     rotation: 0,
     crop: { x: 0, y: 0, width: 100, height: 100 },
   });

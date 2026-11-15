@@ -25,6 +25,12 @@ import { cn, downloadBlob, formatBytes, savingsPct, uid, uniqueName, withExtensi
 
 const ACCEPT = ".png,.jpg,.jpeg,.webp,.gif,.bmp,.tif,.tiff,.avif,.svg,image/*";
 
+function outputName(sourceName: string, ext: string, passes: 0 | 1 | 2): string {
+  const name = withExtension(sourceName, ext);
+  const suffix = passes === 2 ? "-reprocessed-2pass" : "-reprocessed";
+  return passes ? name.replace(/(\.[^.]+)$/, `${suffix}$1`) : name;
+}
+
 interface Entry {
   id: string;
   file: File;
@@ -36,6 +42,7 @@ interface Entry {
     url: string;
     outExt: string;
     outMime: string;
+    downloadName: string;
     width: number;
     height: number;
     srcWidth: number;
@@ -151,7 +158,11 @@ export default function ImageWorkspace() {
           updateEntry(entry.id, {
             status: "done",
             progress: 1,
-            result: { ...res, url: URL.createObjectURL(res.blob) },
+            result: {
+              ...res,
+              url: URL.createObjectURL(res.blob),
+              downloadName: outputName(entry.file.name, res.outExt, settings.experimentalPixelReprocess ? settings.reprocessPasses : 0),
+            },
           });
         } catch (err) {
           if (!current()) return;
@@ -181,7 +192,7 @@ export default function ImageWorkspace() {
     const zip = new JSZip();
     const taken = new Set<string>();
     for (const e of done) {
-      const name = uniqueName(withExtension(e.file.name, e.result!.outExt), taken);
+      const name = uniqueName(e.result!.downloadName, taken);
       taken.add(name);
       zip.file(name, e.result!.blob);
     }
@@ -314,8 +325,21 @@ export default function ImageWorkspace() {
               />
               <span>Reprocess image pixels locally (opt-in)</span>
             </label>
+            {settings.experimentalPixelReprocess && (
+              <label className="block text-xs text-dim">
+                Resample and re-encode passes
+                <select
+                  className="mt-1 w-full rounded-lg border border-ink/15 bg-panel2 p-2 text-ink"
+                  value={settings.reprocessPasses}
+                  onChange={(e) => setSettings((s) => ({ ...s, reprocessPasses: Number(e.target.value) as 1 | 2 }))}
+                >
+                  <option value={1}>1 pass · less quality loss</option>
+                  <option value={2}>2 passes · more quality loss</option>
+                </select>
+              </label>
+            )}
             <p className="text-[0.7rem] leading-relaxed text-warn">
-              Research experiment, not a SynthID detector or verified remover. It changes image detail, may reduce quality, and cannot confirm a watermark is gone. Signed Content Credentials remain protected.
+              Research experiment, not a SynthID detector or verified remover. Download a separate reprocessed file to test yourself; it may lose detail, and a watermark may remain. Signed Content Credentials stay protected.
             </p>
           </div>
 
@@ -359,8 +383,8 @@ export default function ImageWorkspace() {
           <div className="rounded-xl border border-ink/10 bg-panel2 p-3.5">
             <p className="kicker mb-1.5">Metadata policy</p>
             <p className="text-[0.75rem] leading-relaxed text-dim">
-              Every output is rebuilt pixel-by-pixel through a canvas, so EXIF, XMP, GPS and ICC blocks
-              physically cannot survive. <span className="text-ink">Always on, cannot be turned off.</span>
+              Outputs are rebuilt from decoded pixels, not copied with their source EXIF, XMP, GPS or ICC blocks.
+              Encoders can add their own metadata, so verify downloads before sharing. <span className="text-ink">Source metadata is not intentionally copied.</span>
             </p>
           </div>
 
@@ -446,7 +470,7 @@ export default function ImageWorkspace() {
                     onCompare={() => entry.result && setCompareId(entry.id)}
                     onDownload={() =>
                       entry.result &&
-                      downloadBlob(entry.result.blob, withExtension(entry.file.name, entry.result.outExt))
+                      downloadBlob(entry.result.blob, entry.result.downloadName)
                     }
                   />
                 ))}

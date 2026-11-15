@@ -31,6 +31,8 @@ export interface ImageSettings {
   stripMetadata: boolean;
   /** Opt-in, unverified pixel reprocessing; never a SynthID detection/removal verdict. */
   experimentalPixelReprocess: boolean;
+  /** One or two bounded resample/re-encode passes; more passes may reduce quality. */
+  reprocessPasses: 1 | 2;
   /** Clockwise rotation applied after cropping. */
   rotation: 0 | 90 | 180 | 270;
   /** Crop rectangle in source percentages. */
@@ -45,6 +47,7 @@ export const DEFAULT_IMAGE_SETTINGS: ImageSettings = {
   alphaFill: "#ffffff",
   stripMetadata: true,
   experimentalPixelReprocess: false,
+  reprocessPasses: 1,
   rotation: 0,
   crop: { x: 0, y: 0, width: 100, height: 100 },
 };

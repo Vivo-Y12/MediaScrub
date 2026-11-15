@@ -2,8 +2,8 @@
 /**
  * Image processing worker.
  * Decodes → resizes → re-encodes entirely off the main thread.
- * Re-encoding through a canvas strips ALL metadata (EXIF/XMP/ICC) by construction:
- * only raw pixels survive the round-trip.
+ * Re-encoding through a canvas does not copy source EXIF/XMP/ICC blocks;
+ * the browser encoder may add its own container metadata.
  */
 import UTIF from "utif2";
 import { reprocessPixels } from "./pixel-reprocess";
@@ -162,7 +162,7 @@ async function processJob(job: ImageJobRequest): Promise<ImageJobResult> {
     if (outW * outH > 12_000_000) {
       warnings.push("Experimental reprocessing uses extra image memory; a large image may be slow on mobile.");
     }
-    warnings.push(...await reprocessPixels(canvas, !opaque));
+    warnings.push(...await reprocessPixels(canvas, !opaque, settings.reprocessPasses));
     post({ type: "progress", id: job.id, progress: 0.88 });
   }
 

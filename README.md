@@ -8,7 +8,7 @@
 
 Use **Provenance** to inspect supported Content Credentials (C2PA). See the available validation result, recorded history, and details, then save a report if you need one. Signed files are protected from edits that would break their credentials.
 
-**MediaScrub cannot detect or certify removal of SynthID.** SynthID and C2PA are different technologies; not finding Content Credentials does **not** mean a file is human-made or free of invisible watermarks. Image Studio offers an opt-in, experimental on-device pixel-reprocessing pass inspired by published robustness research; it changes pixels but has not been validated as a SynthID remover. It does not alter the signed-file protection.
+**MediaScrub cannot detect or certify removal of SynthID.** SynthID and C2PA are different technologies; not finding Content Credentials does **not** mean a file is human-made or free of invisible watermarks. Image Studio offers opt-in, experimental on-device pixel reprocessing with one or two bounded passes. It downloads a separate `-reprocessed` image for you to test, but has not been validated as a SynthID remover. The second pass can further reduce image quality. Signed-file protection remains in place.
 
 ### Edit images in batches
 
