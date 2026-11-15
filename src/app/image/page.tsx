@@ -210,7 +210,7 @@ export default function ImageWorkspace() {
     <WorkspaceShell
       kicker="// 01 — image studio"
       title="Convert, compress & resize images. Privately."
-      description="Drag in PNG, JPEG, WebP, GIF, BMP, TIFF, AVIF or SVG. Everything is decoded and re-encoded by a Web Worker on your machine — pixels travel through your RAM and nowhere else. Canvas re-encoding also strips every byte of embedded metadata."
+      description="Drop images for local conversion in a Web Worker. Supported inputs include PNG, JPEG, WebP, GIF, BMP, TIFF and browser-dependent AVIF. SVG previews may be blocked from processing when provenance inspection is unavailable. No media is uploaded."
     >
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         {/* ————— settings panel ————— */}
@@ -258,6 +258,7 @@ export default function ImageWorkspace() {
             </div>
             <input
               type="range"
+              aria-label="Output quality"
               min={10}
               max={100}
               step={1}
@@ -278,6 +279,7 @@ export default function ImageWorkspace() {
             </div>
             <input
               type="range"
+              aria-label="Image scale"
               min={5}
               max={100}
               step={5}
@@ -398,7 +400,7 @@ export default function ImageWorkspace() {
             onFiles={addFiles}
             disabled={running}
             title={entries.length ? "Add more images" : "Drop images here"}
-            subtitle="PNG · JPEG · WebP · GIF · BMP · TIFF · AVIF · SVG — processed on-device"
+            subtitle="PNG · JPEG · WebP · GIF · BMP · TIFF · AVIF · SVG preview — processed on-device"
           />
 
           {entries.length > 0 && (

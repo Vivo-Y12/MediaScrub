@@ -33,7 +33,7 @@ const IMAGE_ROWS: { name: string; read: "yes" | "partial" | "no"; readNote?: str
   { name: "BMP", read: "yes", write: "no", writeNote: "exports as PNG" },
   { name: "TIFF", read: "partial", readNote: "first page, common compressions", write: "no" },
   { name: "AVIF", read: "partial", readNote: "browser-dependent", write: "partial", writeNote: "rare encode support" },
-  { name: "SVG", read: "partial", readNote: "rasterized at intrinsic size", write: "no" },
+  { name: "SVG", read: "partial", readNote: "browser preview only; provenance guard may block edits", write: "no", writeNote: "not exported when inspection is unavailable" },
   { name: "HEIC", read: "no", readNote: "no browser decoder — convert via OS first", write: "no" },
 ];
 

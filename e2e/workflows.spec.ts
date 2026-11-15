@@ -123,6 +123,32 @@ test("signed C2PA image is protected from destructive re-encode", async ({ page 
   await expect(page.getByText(/Processing paused to protect provenance/)).toBeVisible({ timeout: 45000 });
 });
 
+test("image provenance hints cannot be bypassed by a spoofed MIME type", async ({ page }) => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(fixture("sample.jpg"));
+  const xmp = `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:iptcExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/" iptcExt:DigitalSourceType="trainedAlgorithmicMedia"/></rdf:RDF></x:xmpmeta>`;
+  const payload = Buffer.concat([Buffer.from("http://ns.adobe.com/xap/1.0/\0"), Buffer.from(xmp)]);
+  const marker = Buffer.alloc(4);
+  marker.writeUInt16BE(0xffe1, 0);
+  marker.writeUInt16BE(payload.length + 2, 2);
+  const image = Buffer.concat([source.subarray(0, 2), marker, payload, source.subarray(2)]);
+
+  await page.goto("/image");
+  await page.locator('input[type="file"][data-ready="true"]').setInputFiles({
+    name: "spoofed.jpg", mimeType: "video/webm", buffer: image,
+  });
+  await page.getByRole("button", { name: /Process 1 file/ }).click();
+  await expect(page.getByText(/Possible AI-origin\/provenance metadata found/)).toBeVisible({ timeout: 45000 });
+  await expect(page.getByRole("button", { name: /Download spoofed/ })).toHaveCount(0);
+
+  await page.goto("/metadata");
+  await page.locator('input[type="file"][data-ready="true"]').setInputFiles({
+    name: "spoofed.jpg", mimeType: "video/webm", buffer: image,
+  });
+  await expect(page.getByText("Provenance & XMP")).toBeVisible({ timeout: 45000 });
+  await expect(page.getByText("trainedAlgorithmicMedia")).toBeVisible();
+});
+
 test("video frame extraction produces actual JPEGs", async ({ page }) => {
   await page.goto("/video");
   await page.locator('input[type="file"][data-ready="true"]').setInputFiles(fixture("sample.webm"));

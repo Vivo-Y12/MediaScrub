@@ -62,11 +62,11 @@ test("large image batch is processed without dropping queued files", async ({ pa
   await expect(page.getByRole("button", { name: /Download batch-/ })).toHaveCount(8);
 });
 
-test("touch phone and tablet menu, local file picker and provenance inspection", async ({ browser, browserName }) => {
+test("touch phone and tablet menu, local file picker and provenance inspection", async ({ browser, browserName }, testInfo) => {
   test.skip(browserName === "firefox", "Firefox desktop does not support Playwright mobile emulation");
   const { devices } = await import("@playwright/test");
   for (const name of ["iPhone 13", "iPad Mini"]) {
-    const context = await browser.newContext({ ...devices[name], baseURL: "http://localhost:3000" });
+    const context = await browser.newContext({ ...devices[name], baseURL: testInfo.project.use.baseURL ?? "http://localhost:3000" });
     try {
       const page = await context.newPage();
       await page.goto("/provenance");

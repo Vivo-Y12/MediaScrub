@@ -165,6 +165,12 @@ body {
   border-radius: 99px;
 }
 
+/* Keyboard focus must remain visible on sliders and custom controls. */
+:is(a, button, input, select, textarea, summary, [role="button"], [role="slider"]):focus-visible {
+  outline: 2px solid var(--color-acid);
+  outline-offset: 3px;
+}
+
 /* range inputs */
 input[type="range"] {
   -webkit-appearance: none;
@@ -216,5 +222,9 @@ details > summary::-webkit-details-marker {
   }
   html {
     scroll-behavior: auto;
+  }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

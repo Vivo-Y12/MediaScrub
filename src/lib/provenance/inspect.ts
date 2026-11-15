@@ -125,7 +125,7 @@ export async function assertNoSignedProvenance(file: File): Promise<void> {
   // ordinary WebM transcoding remains available, while we label the limitation in the UI/docs.
   if (result.state === "unsupported" && result.format === "video/webm"
       && await sniffProvenanceFormat(file) === "video/webm") return;
-  if (result.state === "not-detected" && file.type.startsWith("image/")) {
+  if (result.state === "not-detected" && result.format.startsWith("image/")) {
     const metadata = await inspectFile(file);
     if (metadata.error) throw new Error("Could not inspect image metadata; destructive processing is paused to protect possible provenance.");
     if (metadata.hasProvenanceHints) throw new Error("Possible AI-origin/provenance metadata found. Processing paused so it is not silently discarded; inspect this file in Provenance.");

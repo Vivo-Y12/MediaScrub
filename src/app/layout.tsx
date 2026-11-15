@@ -38,6 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
+        <noscript><style>{"[data-reveal]{opacity:1!important;transform:none!important}"}</style></noscript>
       </head>
       <body className={`${display.variable} ${body.variable} ${mono.variable} bg-void text-ink antialiased`}>
         <div className="flex min-h-dvh flex-col">

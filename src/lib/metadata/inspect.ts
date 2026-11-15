@@ -4,6 +4,7 @@
  */
 import * as exifr from "exifr";
 import { formatBytes } from "@/lib/utils";
+import { sniffProvenanceFormat } from "@/lib/provenance/format";
 
 export interface MetaSection {
   title: string;
@@ -181,7 +182,9 @@ export async function inspectFile(file: File): Promise<Inspection> {
   };
   base.sections.push(fileSection);
 
-  const isImage = file.type.startsWith("image/");
+  // A caller-controlled MIME label must not hide image provenance fields.
+  const detectedFormat = await sniffProvenanceFormat(file);
+  const isImage = (detectedFormat ?? file.type).startsWith("image/");
 
   if (isImage) {
     try {

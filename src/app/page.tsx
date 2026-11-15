@@ -57,7 +57,7 @@ const FAQ = [
   },
   {
     q: "Which formats actually work?",
-    a: "Images: PNG, JPEG, WebP, GIF (first frame), BMP, TIFF (first page), SVG (rasterized), AVIF where your browser supports it. Video: MP4, WebM, MOV, MKV and AVI containers decode through FFmpeg.wasm; H.264, VP8/VP9 and common audio codecs encode out. Exotic codecs fail with a clear error, not a silent wrong file.",
+    a: "Images: PNG, JPEG, WebP, GIF (first frame), BMP, TIFF (first page), and AVIF where your browser supports it. SVG can be previewed, but processing may be blocked when local provenance inspection is unavailable. Video: MP4, WebM, MOV, MKV and AVI containers decode through FFmpeg.wasm; H.264, VP8/VP9 and common audio codecs encode out. Exotic codecs fail with a clear error, not a silent wrong file.",
   },
   {
     q: "Does metadata removal strip AI watermarks too?",

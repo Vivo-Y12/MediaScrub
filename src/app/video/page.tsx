@@ -435,6 +435,7 @@ export default function VideoWorkspace() {
               </div>
               <input
                 type="range"
+                aria-label="Video quality (CRF)"
                 min={18}
                 max={40}
                 step={1}
@@ -476,7 +477,7 @@ export default function VideoWorkspace() {
                   <p className="kicker">Frame rate</p>
                   <span className="font-mono text-xs text-acid">{settings.gifFps} fps</span>
                 </div>
-                <input type="range" min={5} max={24} step={1} className="w-full" value={settings.gifFps}
+                <input type="range" aria-label="GIF frame rate" min={5} max={24} step={1} className="w-full" value={settings.gifFps}
                   onChange={(e) => setSettings((s) => ({ ...s, gifFps: Number(e.target.value) }))} />
               </div>
               <div>
@@ -517,7 +518,7 @@ export default function VideoWorkspace() {
                 <p className="kicker">Frames</p>
                 <span className="font-mono text-xs text-acid">{settings.thumbCount}</span>
               </div>
-              <input type="range" min={1} max={8} step={1} className="w-full" value={settings.thumbCount}
+              <input type="range" aria-label="Thumbnail frame count" min={1} max={8} step={1} className="w-full" value={settings.thumbCount}
                 onChange={(e) => setSettings((s) => ({ ...s, thumbCount: Number(e.target.value) }))} />
             </div>
           )}
