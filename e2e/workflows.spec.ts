@@ -3,6 +3,13 @@ import path from "node:path";
 
 const fixture = (name: string) => path.join(__dirname, "fixtures", name);
 
+test("unused server endpoints are absent", async ({ request }) => {
+  for (const route of ["/api/health", "/api/stats"]) {
+    expect((await request.get(route)).status()).toBe(404);
+  }
+  expect((await request.post("/api/stats")).status()).toBe(404);
+});
+
 test("navigation and privacy-first page", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("link", { name: "Provenance", exact: true })).toBeVisible();
@@ -34,6 +41,8 @@ test("image crop, rotate, conversion and download", async ({ page }) => {
   page.on("request", request => { if (request.method() === "POST") requests.push(request.url()); });
   await page.goto("/image");
   await page.locator('input[type="file"][data-ready="true"]').setInputFiles(fixture("sample.png"));
+  // Firefox can preview individual WebP links rather than dispatching a download event.
+  await page.getByRole("radio", { name: /PNG lossless/ }).check();
   await page.getByLabel("Clockwise rotation").selectOption("90");
   await page.getByLabel("width %").fill("50");
   await page.getByLabel("height %").fill("50");
@@ -41,7 +50,7 @@ test("image crop, rotate, conversion and download", async ({ page }) => {
   await expect(page.getByText("160×120 → 60×80")).toBeVisible({ timeout: 45000 });
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: /Download sample/ }).click();
-  expect((await download).suggestedFilename()).toMatch(/sample\.(webp|png)$/);
+  expect((await download).suggestedFilename()).toBe("sample.png");
   expect(requests).toEqual([]);
 });
 

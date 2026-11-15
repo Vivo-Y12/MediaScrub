@@ -20,7 +20,6 @@ import CompareSlider from "@/components/compare-slider";
 import { getCapabilities, type Capabilities, type EncodeFormat } from "@/lib/capabilities";
 import { ImageProcessor } from "@/lib/image/processor";
 import { DEFAULT_IMAGE_SETTINGS, type ImageSettings, type OutputFormat } from "@/lib/image/types";
-import { pingStats } from "@/lib/stats";
 import { assertNoSignedProvenance } from "@/lib/provenance/inspect";
 import { cn, downloadBlob, formatBytes, savingsPct, uid, uniqueName, withExtension } from "@/lib/utils";
 
@@ -136,7 +135,6 @@ export default function ImageWorkspace() {
     setRunning(true);
 
     const snapshot = entries.filter((e) => e.status === "queued" || e.status === "error");
-    let completed = 0;
     // Bound both provenance reads and image jobs: a large drop must not scan every file at once.
     for (let offset = 0; offset < snapshot.length && current(); offset += 3) {
       await Promise.all(snapshot.slice(offset, offset + 3).map(async (entry) => {
@@ -150,7 +148,6 @@ export default function ImageWorkspace() {
           });
           const res = await promise;
           if (!current()) return;
-          completed += 1;
           updateEntry(entry.id, {
             status: "done",
             progress: 1,
@@ -166,10 +163,7 @@ export default function ImageWorkspace() {
         }
       }));
     }
-    if (current()) {
-      setRunning(false);
-      if (completed > 0) pingStats(completed);
-    }
+    if (current()) setRunning(false);
   };
 
   const cancel = () => {

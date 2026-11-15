@@ -27,7 +27,7 @@ The evidence/claim distinction in this review also draws on Kassis, T., Agarwal,
 | --- | --- |
 | Next.js production build, TypeScript and ESLint | Passed |
 | Unit tests | 31 passed |
-| Full Chromium browser suite | 41 passed, including images, videos, signed provenance, metadata, accessibility and responsive routes |
+| Full Chromium browser suite | 42 passed, including images, videos, signed provenance, metadata, accessibility, responsive routes and absence of retired API endpoints |
 | Firefox focused accessibility, pixel and responsive suite | 11 passed; one Playwright mobile-emulation test intentionally skipped because Firefox desktop does not support it |
 | WebKit focused accessibility, pixel and responsive suite | 12 passed |
 | Dependency audit, production tree | No moderate/high/critical finding; one low-severity transitive esbuild advisory concerning Windows development servers |
@@ -39,4 +39,4 @@ The evidence/claim distinction in this review also draws on Kassis, T., Agarwal,
 - Browser-local C2PA inspection cannot evaluate every container. In particular, WebM remains an explicit unsupported exception, and SVG may be blocked. Do not describe an unsupported read as a negative result.
 - The production CSP still permits an inline theme boot script for compatibility; migrating to a nonce/hash-based policy needs a separate Next.js integration and cross-browser validation. This review did not claim a strict CSP.
 - The browser tests ran on Linux browser engines and mobile emulations, not physical iOS/Android devices or a production deployment. Unsupported codecs, huge files, memory pressure and all possible malicious inputs are not exhaustively tested.
-- This review preserved the current design and all workflows; it was not a full visual rebrand. No external skill packages were installed into MediaScrub. No GitHub push or deployment was performed.
+- This review preserved the current design and all user-facing media workflows; it was not a full visual rebrand. A later cleanup removed unused stats/database scaffolding and health/stats API routes. No external skill packages were installed into MediaScrub; deploying the site is a separate step.

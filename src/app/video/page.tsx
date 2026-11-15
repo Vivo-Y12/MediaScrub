@@ -27,7 +27,6 @@ import {
   type VideoSettings,
 } from "@/lib/video/operations";
 import { getCapabilities, recommendedVideoLimitMb, type Capabilities } from "@/lib/capabilities";
-import { pingStats } from "@/lib/stats";
 import { assertNoSignedProvenance } from "@/lib/provenance/inspect";
 import {
   cn,
@@ -188,7 +187,6 @@ export default function VideoWorkspace() {
     const current = () => !cancelRef.current && runRef.current === runId;
     setRunning(true);
     setEngineError(null);
-    let completed = 0;
 
     for (const entry of todo) {
       if (!current()) break;
@@ -286,7 +284,6 @@ export default function VideoWorkspace() {
           await ff.deleteFile(outName).catch(() => undefined);
         }
         await ff.deleteFile(inName).catch(() => undefined);
-        completed += 1;
       } catch (err) {
         if (current()) {
           updateEntry(entry.id, { status: "error", progress: 0, error: err instanceof Error ? err.message : "Processing failed" });
@@ -302,10 +299,7 @@ export default function VideoWorkspace() {
         }
       }
     }
-    if (current()) {
-      setRunning(false);
-      if (completed > 0) pingStats(completed);
-    }
+    if (current()) setRunning(false);
   };
 
   const downloadAll = async () => {

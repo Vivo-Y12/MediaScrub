@@ -1,5 +1,7 @@
 # MediaScrub existing-code audit (2026-11-10)
 
+This is a historical baseline, not the current architecture. The optional database, stats API, and health route described below were removed in the later cleanup; see [DEVELOPMENT.md](DEVELOPMENT.md) for current setup.
+
 ## Baseline and preservation
 - Public repository cloned from `Vivo-Y12/MediaScrub` at `3284058`; `main` was clean, with no local edits. Development is isolated on `development/provenance-and-tools`. No push or deployment authorized.
 - Recent history: `3284058` and `176abc5` merge commits, `aa2135d` initial app, `a1f8e3b` original toolkit. `package-lock.json` is committed; no other lockfiles.

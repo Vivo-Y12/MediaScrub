@@ -39,7 +39,7 @@ Research date: 2026-11-10. Sources: public [RemoveSynthID home](https://removesy
 | `exifr` | Retain for read-only metadata. Does **not** validate C2PA signatures. |
 | `piexifjs` | Small MIT-licensed dependency for selective JPEG EXIF reconstruction; preserve compressed pixels and other JPEG segments, but block signed C2PA input. |
 | WebCodecs | Not chosen as universal video engine: unsupported codecs/browser variation would duplicate FFmpeg and require separate muxers. |
-| PostgreSQL counter | Existing optional schema preserved, telemetry disabled, POST closed with 410. Not required for build or user workflows. |
+| PostgreSQL counter | An earlier version kept the optional schema with telemetry disabled; the unused stats endpoint, schema and database dependencies have since been removed. Neither processing nor deployment requires a database. |
 | REA | Investigation aid only. Skill installed and `doctor --skill` healthy; no active Arena MCP client registration or restart is possible in this hosted run. CLI browser capture was successful. |
 
 ## Key gaps remaining

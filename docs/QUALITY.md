@@ -1,6 +1,6 @@
 # Verification, security and deployment readiness
 
-Snapshot: 2026-11-10, branch `main`; the latest site-wide review remains local until explicitly pushed. Baseline audit: [AUDIT.md](AUDIT.md). Reference inventory: [RESEARCH.md](RESEARCH.md). Latest review: [SITE-REVIEW.md](SITE-REVIEW.md).
+Snapshot: 2026-11-10, branch `main`. Baseline audit: [AUDIT.md](AUDIT.md). Reference inventory: [RESEARCH.md](RESEARCH.md). Latest review: [SITE-REVIEW.md](SITE-REVIEW.md).
 
 ## Verification matrix
 
@@ -12,7 +12,7 @@ Snapshot: 2026-11-10, branch `main`; the latest site-wide review remains local u
 | C2PA and private metadata sections | Provenance inspection and JPEG privacy tool remain distinct; no external SynthID handoff | Pass: section headings, no external detector link, no cross-origin requests/POSTs during local scan |
 | Signed C2PA inspection | c2pa-rs signed `CA.jpg` and `video1.mp4` fixtures; active manifest/signature state/history/assertions rendered | Pass: both `Valid`, signer trust **not** checked; JSON export works |
 | Signed-provenance preservation | Signed JPEG into Image Studio and Metadata stripping; signed MP4 into Video Lab; both renamed `.webm` to test extension/MIME spoofing; ordinary JPEG with AI XMP marker mislabeled `video/webm` | Pass: signed media and mislabeled XMP image blocked; original files unmodified; signed MP4 still verifies by content |
-| Image resize/crop/rotate/convert | Real 160×120 PNG; 50% × 50% crop + 90° turn in Chromium; phone/tablet PNG processing and download in Chromium/Firefox/WebKit | Pass: 60×80 WebP output in Chromium; PNG export in three desktop browser engines; native keyboard-focusable format radios |
+| Image resize/crop/rotate/convert | Real 160×120 PNG; 50% × 50% crop + 90° turn and download in Chromium/Firefox/WebKit; phone/tablet PNG processing and download in those desktop browser engines | Pass: 60×80 PNG output in Chromium, Firefox and WebKit; native keyboard-focusable format radios; WebP output checked separately via batch ZIP |
 | Experimental image pixel reprocessing | Opt-in browser-worker resample and alpha-safe lossy intermediate; test compares decoded pixels against normal output, checks no POST, and verifies signed C2PA still blocks | Pass for synthetic PNG in Chromium, Firefox and WebKit desktop engines. **No SynthID-positive samples or official verifier checked; neither detection nor watermark removal is established.** Requires extra image memory and may degrade quality. |
 | Batch images / comparison / ZIP | PNG + JPEG converted and ZIP opened in test; 8-file batch regression across Chromium/Firefox/WebKit | Pass: two real WebP files in ZIP; bounded provenance reads/jobs (3 concurrent) and all 8 batch entries finish |
 | Batch video ZIP duplicate names | Two WebM inputs named identically; inspect MP4 entries in downloaded ZIP | Pass: both outputs retained with unique names |
@@ -24,13 +24,13 @@ Snapshot: 2026-11-10, branch `main`; the latest site-wide review remains local u
 | Unsigned video metadata remux | WebM stream-copy output downloaded, header checked; failure/read-error cleanup unit-tested | Pass; metadata removal is best-effort, not universal |
 | Network privacy | Playwright checks no POST while processing image, video and provenance; checks no cross-origin requests on signed C2PA scan | Pass in Chromium production server; no blanket proof for all browsers/extensions |
 | Errors/cancellation | Worker cancellation/crash isolation unit-tested; image Stop/retry and video Cancel/retry browser-tested; impossible and out-of-duration trim bounds tested | Pass for tested paths; stale runs cannot publish a result after a retry; mobile memory pressure remains untested |
-| Build & static checks | Next 16.4.6 webpack production build; `tsc --noEmit`; ESLint; Vitest | Pass: 31 unit tests; 41 Chromium browser tests, 11 Firefox browser tests + 1 unsupported mobile-emulation skip, 12 WebKit browser tests. Linux engines are not physical iOS/Android devices. |
+| Build & static checks | Next 16.4.6 webpack production build; `tsc --noEmit`; ESLint; Vitest | Pass: 31 unit tests; 42 Chromium browser tests, 11 Firefox browser tests + 1 unsupported mobile-emulation skip, 12 WebKit browser tests. Linux engines are not physical iOS/Android devices. |
 
 ## Security review
 
 - Public `npm audit --omit=dev` after security patch: **0 critical/high/moderate**, **1 low** (esbuild advisory relating to Windows development servers). Earlier Next 16.2.6 tree had critical/high advisories; upgraded to 16.4.6 and updated PostCSS/sharp transitive dependencies. Audit findings change over time: rerun before deployment.
 - React escapes manifest strings; active assertion data is rendered as text, not injected HTML. Untrusted JSON reports are downloaded, not executed. The local SVG decoding path should still be threat-modelled when accepting untrusted SVGs.
-- Media is never posted to an app backend. API routes: `/api/health` and legacy `/api/stats`; legacy POST is now `410 Gone`, GET is read-only and unused by UI; database is optional. No login, cookies, payment, server-side media storage or ads.
+- Media is never posted to an app backend. Unused health/stats endpoints, the database layer, and telemetry no-op calls have been removed. No login, cookies, payment, server-side media storage or ads.
 - C2PA reader is the official MIT SDK with same-origin vendored WASM. `verifyTrust:false`, `remoteManifestFetch:false` and `ocspFetch:false` are explicit privacy choices; a structurally valid/signed manifest is not automatically a trusted identity. Missing data ≠ human origin, unsupported WebM ≠ no provenance.
 - No external SynthID handoff or in-app detector. The provenance page inspects C2PA locally and does not treat missing Content Credentials as evidence of a missing watermark. The opt-in Image Studio pixel pass is experimental, not an official-detector-backed remover; it never reports SynthID status.
 - Signed C2PA files are blocked before canvas re-encoding, remux or EXIF edits; invalid/unavailable inspection fails closed for supported formats. Because the official SDK rejects WebM as UnsupportedType, only files with a verified WebM header are allowed through that exception **with an explicit unsupported-provenance limitation**; cannot promise preservation of non-C2PA WebM container tags.

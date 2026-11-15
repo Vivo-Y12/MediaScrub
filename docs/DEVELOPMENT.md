@@ -32,7 +32,7 @@ Keep `npm run dev` running in a separate terminal before `npm run test:e2e`, or 
 ## Deployment notes
 
 - Serve `/c2pa/c2pa_bg.wasm` and `/ffmpeg/ffmpeg-core.{js,wasm}` from the app's origin. Browser workers, blob URLs, and WASM must be allowed by your headers. The production config includes a same-origin CSP and baseline security headers; adjust carefully for your environment.
-- Media processing does not need a backend, third-party media API, or `DATABASE_URL`. The legacy stats POST route is disabled. Do not introduce uploads or analytics without revisiting the privacy guarantees.
+- Media processing does not need a backend, database, third-party media API, or environment credentials. The obsolete stats API and database setup have been removed. Do not introduce uploads or analytics without revisiting the privacy guarantees.
 - Account for CPU and browser memory limits. Hosting should provide TLS and appropriate public-server controls. The bundled FFmpeg core has GPL-2.0-or-later distribution obligations; review licensing before redistribution.
 - C2PA verification deliberately disables remote-manifest and OCSP fetches and does not check signer trust. Do not describe this as SynthID detection or universal provenance verification.
 

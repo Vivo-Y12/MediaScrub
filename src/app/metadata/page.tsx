@@ -24,7 +24,6 @@ import { inspectFile, inspectionToJsonBlob, type Inspection, type MetaSection } 
 import { stripImageMetadata, stripVideoMetadata } from "@/lib/metadata/strip";
 import { editJpegMetadata, type JpegPrivacyEdits } from "@/lib/metadata/edit-jpeg";
 import { ImageProcessor } from "@/lib/image/processor";
-import { pingStats } from "@/lib/stats";
 import { assertNoSignedProvenance } from "@/lib/provenance/inspect";
 import { cn, downloadBlob, formatBytes, isImageFile, isVideoFile, uid, withExtension } from "@/lib/utils";
 
@@ -83,7 +82,6 @@ export default function MetadataWorkspace() {
         try {
           const data = await inspectFile(file);
           updateEntry(id, { status: "done", data });
-          pingStats(1);
         } catch (err) {
           updateEntry(id, {
             status: "error",

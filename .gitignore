@@ -15,7 +15,6 @@ dist/
 # env & secrets — never commit
 .env
 .env.*
-!.env.example
 
 # logs / misc
 npm-debug.log*
